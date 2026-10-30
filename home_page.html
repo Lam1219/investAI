@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RRSP vs TFSA Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --accent2: #f472b6;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --good: #22c55e;
+    --bad: #ef4444;
+    --warn: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .subtitle { text-align: center; color: var(--muted); margin-bottom: 30px; }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  @media (max-width: 640px) { .grid, .grid-3 { grid-template-columns: 1fr; } }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 15px;
+    min-height: 42px;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  input[readonly] { 
+    background: #0b1220; 
+    color: var(--accent); 
+    font-weight: 600;
+    cursor: not-allowed;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: transform 0.1s;
+  }
+  button:hover { transform: translateY(-1px); }
+  .result { padding: 20px; border-radius: 12px; margin-top: 10px; }
+  .result.good { background: rgba(34,197,94,0.12); border-left: 4px solid var(--good); }
+  .result.warn { background: rgba(245,158,11,0.12); border-left: 4px solid var(--warn); }
+  .result.bad  { background: rgba(239,68,68,0.12); border-left: 4px solid var(--bad); }
+  .verdict { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .metric { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #334155; }
+  .metric:last-child { border-bottom: none; }
+  .metric span:first-child { color: var(--muted); }
+  .metric span:last-child { font-weight: 600; }
+  .metric.total span:first-child, .metric.total span:last-child { color: var(--accent); font-size: 16px; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .section-title { font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+  .hidden { display: none; }
+  .info-box {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 3px solid var(--accent);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+  .info-box strong { color: var(--accent); }
+  .help-link { color: var(--accent); text-decoration: none; font-size: 12px; }
+  .help-link:hover { text-decoration: underline; }
+  .sub-section {
+    border-top: 1px solid #334155;
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+  .summary-box {
+    background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(244,114,182,0.1));
+    border: 1px solid rgba(56,189,248,0.3);
+    padding: 16px;
+    border-radius: 10px;
+    margin-top: 16px;
+  }
+  .summary-box .metric { border-bottom: 1px dashed #334155; }
+  .summary-box .metric:last-child { border-bottom: none; }
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    color: var(--accent);
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .tooltip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    border: 1px solid var(--accent);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+    color: var(--text);
+    font-weight: normal;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🍁 RRSP vs TFSA Calculator</h1>
+  <p class="subtitle">Find out where your next dollar of savings should go.</p>
+
+  <div class="card">
+    <div class="section-title">About You</div>
+    <div class="grid">
+      <div class="field-group">
+        <label>Year of Birth</label>
+        <input type="number" id="birthYear" value="1996" min="1920" max="2010">
+      </div>
+      <div class="field-group">
+        <label>Province / Territory</label>
+        <select id="province">
+          <option value="ON">Ontario</option>
+          <option value="BC">British Columbia</option>
+          <option value="AB">Alberta</option>
+          <option value="QC">Quebec</option>
+          <option value="MB">Manitoba</option>
+          <option value="SK">Saskatchewan</option>
+          <option value="NS">Nova Scotia</option>
+          <option value="NB">New Brunswick</option>
+          <option value="NL">Newfoundland & Labrador</option>
+          <option value="PE">Prince Edward Island</option>
+          <option value="NT">Northwest Territories</option>
+          <option value="YT">Yukon</option>
+          <option value="NU">Nunavut</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Year you became a Canadian resident for tax purposes
+          <span class="tooltip" data-tip="For Canadian-born: enter your birth year">ⓘ</span>
+        </label>
+        <input type="number" id="residentYear" value="2014" min="1920" max="2026">
+      </div>
+      <div class="field-group">
+        <label>Current Annual Employment Income (CAD $)</label>
+        <input type="number" id="income" value="75000" min="0">
+      </div>
+      <div class="field-group">
+        <label>Other Current Taxable Income (dividends, rental, etc.)</label>
+        <input type="number" id="otherIncome" value="0" min="0">
+      </div>
+    </div>
+    <div class="info-box" id="eligibilityNote"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">TFSA Information</div>
+    <div class="grid">
+      <div class="field-group">
+        <label>Total TFSA Contributions Made So Far (CAD $)
+          <span class="tooltip" data-tip="Sum of all deposits you've ever made to your TFSA. Does NOT include investment growth. Find this in CRA My Account → 'TFSA contribution room'">ⓘ</span>
+        </label>
+        <input type="number" id="tfsaContributions" value="15000" min="0">
+        <div class="note">
+          💡 This is the total you've deposited, not your current balance. Your balance includes growth, but only deposits count against your contribution room.
+        </div>
+      </div>
+    </div>
+    <div class="note" id="tfsaRoomNote" style="margin-top:14px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">RRSP Information</div>
+    <div class="grid">
+      <div class="field-group">
+        <label>Available RRSP Contribution Room (CAD $)
+          <span class="tooltip" data-tip="From your latest CRA Notice of Assessment or CRA My Account">ⓘ</span>
+        </label>
+        <input type="number" id="rrspRoom" value="20000" min="0">
+      </div>
+      <div class="field-group">
+        <label>Current RRSP Balance (CAD $)</label>
+        <input type="number" id="rrspBalance" value="30000" min="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Retirement Forecast</div>
+    <div class="grid">
+      <div class="field-group">
+        <label>Planned Retirement Age</label>
+        <input type="number" id="retireAge" value="65" min="19" max="100">
+      </div>
+      <div class="field-group">
+        <label>Investment Return Profile</label>
+        <select id="returnProfile">
+          <option value="3.5">Conservative (3.5%): GICs, bonds, savings accounts</option>
+          <option value="5.5" selected>Balanced (5.5%): 60% stocks / 40% bonds mix</option>
+          <option value="7.5">Growth (7.5%): Mostly equity ETFs/index funds</option>
+          <option value="9">Aggressive (9%): All-equity, long time horizon</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="section-title" style="font-size:12px;">Annual Retirement Income — Break It Down</div>
+      <div class="note" style="margin-bottom:14px;">
+        Your marginal tax rate in retirement depends on your <em>taxable</em> income. TFSA withdrawals are tax-free and don't count. Use the fields below to estimate each source.
+        <br>
+        <a class="help-link" href="https://www.canada.ca/en/services/benefits/publicpensions.html" target="_blank">📖 Service Canada — public pensions</a> ·
+        <a class="help-link" href="https://www.canada.ca/en/employment-social-development/services/retirement-income-planner.html" target="_blank">📖 Benefit & Retirement Income Planner</a>
+      </div>
+
+      <div class="grid">
+        <div class="field-group">
+          <label>Canada Pension Plan (CPP) — annual at retirement
+            <span class="tooltip" data-tip="Check your Service Canada Statement of Contributions">ⓘ</span>
+          </label>
+          <select id="cppPreset" onchange="updateCPP()">
+            <option value="0">Not yet sure / won't qualify</option>
+            <option value="9000">Average CPP (~$9,000/yr)</option>
+            <option value="16000" selected>Maximum CPP at age 65 (~$16,000/yr)</option>
+            <option value="18000">Maximum CPP deferred to age 70 (~$22,000/yr, prorated)</option>
+            <option value="custom">Custom amount</option>
+          </select>
+          <input type="number" id="cppAmount" value="16000" min="0" style="margin-top:8px;" oninput="updateRetireSummary()">
+        </div>
+
+        <div class="field-group">
+          <label>Old Age Security (OAS) — auto-calculated
+            <span class="tooltip" data-tip="Based on years lived in Canada after age 18">ⓘ</span>
+          </label>
+          <input type="text" id="oasAmount" readonly value="$0">
+          <div class="note" id="oasNote"></div>
+        </div>
+
+        <div class="field-group">
+          <label>Workplace / Company Pension (DB or DC) — annual
+            <span class="tooltip" data-tip="Check your pension statement">ⓘ</span>
+          </label>
+          <input type="number" id="pensionAmount" value="0" min="0" oninput="updateRetireSummary()">
+        </div>
+
+        <div class="field-group">
+          <label>Expected RRSP / RRIF Withdrawals — annual
+            <span class="tooltip" data-tip="Rough guess of what you'll draw down. The 4% rule is a common starting point.">ⓘ</span>
+          </label>
+          <input type="number" id="rrspWithdrawal" value="15000" min="0" oninput="updateRetireSummary()">
+        </div>
+
+        <div class="field-group">
+          <label>Other Taxable Retirement Income
+            <span class="tooltip" data-tip="Rental, dividends, part-time work, etc.">ⓘ</span>
+          </label>
+          <input type="number" id="otherRetireIncome" value="0" min="0" oninput="updateRetireSummary()">
+        </div>
+
+        <div class="field-group">
+          <label>TFSA Withdrawals — annual (tax-free)
+            <span class="tooltip" data-tip="Does NOT affect your marginal tax rate">ⓘ</span>
+          </label>
+          <input type="number" id="tfsaWithdrawal" value="0" min="0" oninput="updateRetireSummary()">
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="metric total"><span>📊 Total TAXABLE retirement income</span><span id="taxableRetireTotal">$0</span></div>
+        <div class="metric"><span>↳ Used to compute your retirement marginal tax rate</span><span id="taxableRetireNote">—</span></div>
+        <div class="metric total"><span>💰 Total retirement spending money (incl. TFSA)</span><span id="totalRetireSpend">$0</span></div>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="grid">
+        <div class="field-group">
+          <label>Amount you plan to contribute THIS YEAR (CAD $)</label>
+          <input type="number" id="contribution" value="5000" min="0">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button onclick="calculate()">Calculate Best Choice</button>
+
+  <div id="output" class="hidden">
+    <div class="card">
+      <div class="section-title">Your Tax Situation</div>
+      <div id="taxBreakdown"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Recommendation</div>
+      <div id="recommendation"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Projection Over Time</div>
+      <div id="projection"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="note">
+      <strong>How this works:</strong> RRSP wins when your marginal tax rate today is higher than your marginal tax rate in retirement. TFSA wins in the opposite case.
+      <br><br>
+      <strong>Where to find each number:</strong>
+      <br>• <strong>CPP:</strong> Log into <a class="help-link" href="https://www.servicecanada.gc.ca/tbsc-fsco/sc-home.jsp?lang=eng" target="_blank">My Service Canada Account</a> → "Statement of Contributions" shows your estimated retirement pension.
+      <br>• <strong>OAS:</strong> Auto-calculated here. Full OAS in 2026 is ~$7,900/yr, reduced proportionally if you lived in Canada less than 40 years after age 18.
+      <br>• <strong>Workplace pension:</strong> Your employer's pension administrator provides a retirement estimate.
+      <br>• <strong>RRSP/RRIF withdrawals:</strong> A common rule of thumb is the <em>4% rule</em>: withdraw 4% of your portfolio in the first year of retirement, adjusted for inflation.
+      <br><br>
+      <strong>OAS clawback note:</strong> If your taxable retirement income exceeds ~$91,000 (2026), OAS is clawed back at 15¢ per dollar. This effectively raises your marginal rate in that band. This calculator doesn't model the clawback but if you're near that threshold, consider consulting a planner.
+      <br><br>
+      <strong>Assumptions:</strong> 2026 federal + provincial tax brackets (indexed estimates). Does not model CPP/EI premiums, dividend gross-up, capital gains inclusion, or RRSP overcontribution penalties.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- 2026 Canadian Tax Brackets (indexed estimates) ---------- */
+const FEDERAL = {
+  bpa: 16500,
+  brackets: [
+    [58165, 0.150],
+    [116340, 0.205],
+    [180240, 0.260],
+    [257750, 0.290],
+    [Infinity, 0.330]
+  ]
+};
+
+const PROVINCES = {
+  ON: { bpa: 13100, brackets: [[52886,0.0505],[105775,0.0915],[150000,0.1116],[220000,0.1216],[Infinity,0.1316]] },
+  BC: { bpa: 12930, brackets: [[49279,0.0506],[98560,0.0770],[113158,0.1050],[156040,0.1229],[240000,0.1470],[252752,0.1680],[Infinity,0.2050]] },
+  AB: { bpa: 22323, brackets: [[151234,0.08],[181478,0.10],[241973,0.12],[362958,0.13],[Infinity,0.14]] },
+  QC: { bpa: 18335, brackets: [[53255,0.14],[106530,0.19],[129590,0.24],[Infinity,0.2575]] },
+  MB: { bpa: 15780, brackets: [[47000,0.108],[100000,0.1275],[Infinity,0.174]] },
+  SK: { bpa: 18290, brackets: [[52067,0.105],[148908,0.125],[Infinity,0.145]] },
+  NS: { bpa: 8847, brackets: [[30507,0.0879],[61015,0.1495],[95883,0.1667],[Infinity,0.21]] },
+  NB: { bpa: 13261, brackets: [[48972,0.0940],[97944,0.14],[Infinity,0.16]] },
+  NL: { bpa: 10882, brackets: [[41971,0.087],[83942,0.145],[106367,0.158],[Infinity,0.203]] },
+  PE: { bpa: 12250, brackets: [[33308,0.095],[64656,0.1347],[105000,0.163],[Infinity,0.19]] },
+  NT: { bpa: 17294, brackets: [[52864,0.059],[105730,0.086],[171790,0.122],[Infinity,0.1405]] },
+  YT: { bpa: 16500, brackets: [[57375,0.064],[114750,0.09],[177882,0.109],[500000,0.128],[Infinity,0.15]] },
+  NU: { bpa: 19274, brackets: [[54707,0.04],[109411,0.07],[177882,0.09],[Infinity,0.115]] }
+};
+
+/* ---------- Tax math ---------- */
+function computeTax(income, bpa, brackets) {
+  if (income <= 0) return 0;
+  let tax = 0, prev = 0;
+  for (const [limit, rate] of brackets) {
+    const slice = Math.min(income, limit) - prev;
+    if (slice > 0) tax += slice * rate;
+    prev = Math.min(income, limit);
+    if (income <= limit) break;
+  }
+  const credit = bpa * brackets[0][1];
+  return Math.max(0, tax - credit);
+}
+
+function marginalRate(income, brackets) {
+  for (const [limit, rate] of brackets) {
+    if (income <= limit) return rate;
+  }
+  return brackets[brackets.length-1][1];
+}
+
+function totalTax(income, province) {
+  const fed = computeTax(income, FEDERAL.bpa, FEDERAL.brackets);
+  const prov = PROVINCES[province];
+  let provTax = computeTax(income, prov.bpa, prov.brackets);
+  if (province === 'QC') {
+    const fedBasic = computeTax(income, FEDERAL.bpa, FEDERAL.brackets);
+    const abatement = fedBasic * 0.165;
+    return (fedBasic - abatement) + provTax;
+  }
+  return fed + provTax;
+}
+
+function marginalRateCombined(income, province) {
+  const fedMR = marginalRate(income, FEDERAL.brackets);
+  const provMR = marginalRate(income, PROVINCES[province].brackets);
+  if (province === 'QC') return (fedMR * (1 - 0.165)) + provMR;
+  return fedMR + provMR;
+}
+
+/* ---------- TFSA ---------- */
+const TFSA_ANNUAL = {
+  2009:5000,2010:5000,2011:5000,2012:5000,2013:5500,2014:5500,
+  2015:10000,2016:5500,2017:5500,2018:5500,2019:6000,2020:6000,
+  2021:6000,2022:6000,2023:6500,2024:7000,2025:7000,2026:7000
+};
+
+function computeTFSAEligibilityYear(birthYear, residentYear) {
+  return Math.max(residentYear, birthYear + 18, 2009);
+}
+
+function computeTFSARoom(eligYear) {
+  let total = 0;
+  for (let y = eligYear; y <= 2026; y++) total += (TFSA_ANNUAL[y] || 7000);
+  return total;
+}
+
+/* ---------- OAS auto-calculation ---------- */
+const OAS_MAX_2026 = 7900;
+
+function computeOAS(birthYear, residentYear, retireAge) {
+  const ageAtImmigration = residentYear - birthYear;
+  const yearsInCanadaAfter18 = Math.max(0, retireAge - Math.max(18, ageAtImmigration));
+  const yearsForOAS = Math.min(yearsInCanadaAfter18, 40);
+  return Math.round(OAS_MAX_2026 * yearsForOAS / 40);
+}
+
+function computeYearsInCanadaAfter18(birthYear, residentYear, retireAge) {
+  const ageAtImmigration = residentYear - birthYear;
+  const years = Math.max(0, retireAge - Math.max(18, ageAtImmigration));
+  return Math.min(years, 40);
+}
+
+/* ---------- CPP preset handler ---------- */
+function updateCPP() {
+  const preset = document.getElementById('cppPreset').value;
+  const input = document.getElementById('cppAmount');
+  if (preset === 'custom') {
+    input.disabled = false;
+    input.style.opacity = '1';
+  } else {
+    input.value = preset;
+    input.disabled = true;
+    input.style.opacity = '0.7';
+  }
+  updateRetireSummary();
+}
+
+/* ---------- Live retirement summary ---------- */
+function updateRetireSummary() {
+  const birthYear = +document.getElementById('birthYear').value;
+  const residentYear = +document.getElementById('residentYear').value;
+  const retireAge = +document.getElementById('retireAge').value;
+
+  const cpp = +document.getElementById('cppAmount').value || 0;
+  const oas = computeOAS(birthYear, residentYear, retireAge);
+  const pension = +document.getElementById('pensionAmount').value || 0;
+  const rrspWd = +document.getElementById('rrspWithdrawal').value || 0;
+  const other = +document.getElementById('otherRetireIncome').value || 0;
+  const tfsaWd = +document.getElementById('tfsaWithdrawal').value || 0;
+
+  const taxable = cpp + oas + pension + rrspWd + other;
+  const total = taxable + tfsaWd;
+
+  const yearsInCanada = computeYearsInCanadaAfter18(birthYear, residentYear, retireAge);
+
+  document.getElementById('oasAmount').value = `$${oas.toLocaleString()}`;
+  document.getElementById('oasNote').innerHTML =
+    yearsInCanada >= 40
+      ? `✅ ${yearsInCanada} years in Canada after 18 → full OAS`
+      : `⚠️ ${yearsInCanada} of 40 years in Canada after 18 → ${(yearsInCanada/40*100).toFixed(0)}% of full OAS`;
+
+  document.getElementById('taxableRetireTotal').textContent = `$${taxable.toLocaleString()}`;
+  document.getElementById('totalRetireSpend').textContent = `$${total.toLocaleString()}`;
+  document.getElementById('taxableRetireNote').textContent =
+    `This is the number used to compute your retirement marginal tax rate.`;
+}
+
+/* ---------- Update eligibility note live ---------- */
+function updateEligibilityNote() {
+  const birthYear = +document.getElementById('birthYear').value;
+  const residentYear = +document.getElementById('residentYear').value;
+  const currentAge = 2026 - birthYear;
+  const eligYear = computeTFSAEligibilityYear(birthYear, residentYear);
+  const turned18Year = birthYear + 18;
+
+  let note = '';
+  if (residentYear > turned18Year) {
+    const missedYears = eligYear - turned18Year;
+    note = `🌍 <strong>Immigrant scenario detected.</strong> You became a Canadian resident in ${residentYear} at age ${residentYear - birthYear}. ` +
+           `Your TFSA eligibility started on Jan 1, <strong>${eligYear}</strong>. ` +
+           `You missed ${missedYears} year${missedYears===1?'':'s'} of TFSA room that Canadian-born residents accumulated.`;
+  } else if (residentYear < turned18Year) {
+    note = `👶 You became a Canadian resident in ${residentYear} as a child. ` +
+           `Your TFSA eligibility started on Jan 1, <strong>${eligYear}</strong> (the year you turned 18).`;
+  } else {
+    note = `🇨🇦 Canadian-born. Your TFSA eligibility started on Jan 1, <strong>${eligYear}</strong>.`;
+  }
+  note += ` You are currently <strong>${currentAge} years old</strong>.`;
+  document.getElementById('eligibilityNote').innerHTML = note;
+  updateTFSARoomNote();
+  updateRetireSummary();
+}
+
+function updateTFSARoomNote() {
+  const birthYear = +document.getElementById('birthYear').value;
+  const residentYear = +document.getElementById('residentYear').value;
+  const contributions = +document.getElementById('tfsaContributions').value;
+  const eligYear = computeTFSAEligibilityYear(birthYear, residentYear);
+  const lifetimeRoom = computeTFSARoom(eligYear);
+  const remainingRoom = Math.max(0, lifetimeRoom - contributions);
+  document.getElementById('tfsaRoomNote').innerHTML =
+    `📊 Lifetime TFSA contribution room since ${eligYear}: <strong>$${lifetimeRoom.toLocaleString()}</strong>. ` +
+    `Remaining room: <strong>$${remainingRoom.toLocaleString()}</strong>.`;
+}
+
+/* ---------- Main calculation ---------- */
+function calculate() {
+  const birthYear = +document.getElementById('birthYear').value;
+  const province = document.getElementById('province').value;
+  const residentYear = +document.getElementById('residentYear').value;
+  const income = +document.getElementById('income').value;
+  const otherIncome = +document.getElementById('otherIncome').value;
+  const tfsaContributions = +document.getElementById('tfsaContributions').value;
+  const rrspRoom = +document.getElementById('rrspRoom').value;
+  const rrspBalance = +document.getElementById('rrspBalance').value;
+  const retireAge = +document.getElementById('retireAge').value;
+  const growth = +document.getElementById('returnProfile').value / 100;
+  const contribution = +document.getElementById('contribution').value;
+
+  // Retirement income components
+  const cpp = +document.getElementById('cppAmount').value || 0;
+  const oas = computeOAS(birthYear, residentYear, retireAge);
+  const pension = +document.getElementById('pensionAmount').value || 0;
+  const rrspWd = +document.getElementById('rrspWithdrawal').value || 0;
+  const otherRetire = +document.getElementById('otherRetireIncome').value || 0;
+  const tfsaWd = +document.getElementById('tfsaWithdrawal').value || 0;
+  const retireIncome = cpp + oas + pension + rrspWd + otherRetire; // TAXABLE only
+
+  const currentAge = 2026 - birthYear;
+  const yearsToRetire = retireAge - currentAge;
+  const totalIncome = income + otherIncome;
+
+  const eligYear = computeTFSAEligibilityYear(birthYear, residentYear);
+  const lifetimeRoom = computeTFSARoom(eligYear);
+  const availableTFSARoom = Math.max(0, lifetimeRoom - tfsaContributions);
+
+  const currentMTR = marginalRateCombined(totalIncome, province);
+  const currentTax = totalTax(totalIncome, province);
+  const retireMTR = marginalRateCombined(retireIncome, province);
+  const retireTax = totalTax(retireIncome, province);
+
+  const effectiveContribRRSP = Math.min(contribution, rrspRoom);
+  const effectiveContribTFSA = Math.min(contribution, availableTFSARoom);
+
+  const diffPerDollar = currentMTR - retireMTR;
+  const taxSavingsFromRRSP = effectiveContribRRSP * diffPerDollar * Math.pow(1+growth, yearsToRetire);
+
+  // --- Output ---
+  document.getElementById('output').classList.remove('hidden');
+
+  const profileLabel = document.getElementById('returnProfile').selectedOptions[0].text;
+
+  document.getElementById('taxBreakdown').innerHTML = `
+    <div class="metric"><span>Current age</span><span>${currentAge}</span></div>
+    <div class="metric"><span>Years until retirement</span><span>${yearsToRetire}</span></div>
+    <div class="metric"><span>TFSA eligibility year</span><span>${eligYear}</span></div>
+    <div class="metric"><span>Total taxable income (now)</span><span>$${totalIncome.toLocaleString()}</span></div>
+    <div class="metric"><span>Estimated total tax (now)</span><span>$${Math.round(currentTax).toLocaleString()}</span></div>
+    <div class="metric"><span><strong>Current marginal tax rate</strong></span><span><strong>${(currentMTR*100).toFixed(1)}%</strong></span></div>
+    <div style="height:1px;background:#334155;margin:10px 0;"></div>
+    <div class="metric"><span>Total taxable retirement income</span><span>$${retireIncome.toLocaleString()}</span></div>
+    <div class="metric"><span>↳ CPP + OAS + pension + RRSP wd + other</span><span>$${(cpp+oas+pension+rrspWd+otherRetire).toLocaleString()}</span></div>
+    <div class="metric"><span>Estimated total tax (retirement)</span><span>$${Math.round(retireTax).toLocaleString()}</span></div>
+    <div class="metric"><span><strong>Retirement marginal tax rate</strong></span><span><strong>${(retireMTR*100).toFixed(1)}%</strong></span></div>
+    <div style="height:1px;background:#334155;margin:10px 0;"></div>
+    <div class="metric"><span>Rate difference (now − retirement)</span><span style="color:${diffPerDollar>0?'var(--good)':'var(--bad)'}"><strong>${(diffPerDollar*100).toFixed(1)}%</strong></span></div>
+    <div class="metric"><span>Investment return profile</span><span>${profileLabel}</span></div>
+  `;
+
+  // Recommendation
+  let verdict, cls, explanation;
+  const canRRSP = effectiveContribRRSP > 0;
+  const canTFSA = effectiveContribTFSA > 0;
+
+  if (!canRRSP && !canTFSA) {
+    verdict = "⚠️ No contribution room available";
+    cls = "warn";
+    explanation = "You have neither RRSP room nor TFSA room remaining. Consider paying down debt or building non-registered savings.";
+  } else if (!canRRSP) {
+    verdict = "✅ TFSA (only option)";
+    cls = "good";
+    explanation = "Your RRSP room is exhausted. Contribute to your TFSA — all growth and withdrawals will be tax-free.";
+  } else if (!canTFSA) {
+    verdict = "✅ RRSP (only option)";
+    cls = "good";
+    explanation = "Your TFSA room is exhausted. Contribute to your RRSP to claim the deduction.";
+  } else if (Math.abs(diffPerDollar) < 0.02) {
+    verdict = "🤝 Roughly a tie";
+    cls = "warn";
+    explanation = `Your marginal tax rate today (${(currentMTR*100).toFixed(1)}%) is very close to your projected retirement rate (${(retireMTR*100).toFixed(1)}%). Tax-wise, both accounts are similar. <strong>Prefer the TFSA</strong> for its flexibility: withdrawals don't affect Old Age Security, EI, or other income-tested benefits, and contribution room is restored the following year.`;
+  } else if (diffPerDollar > 0) {
+    verdict = "✅ RRSP is better for you";
+    cls = "good";
+    explanation = `Your marginal tax rate today (${(currentMTR*100).toFixed(1)}%) is higher than your projected retirement rate (${(retireMTR*100).toFixed(1)}%). Every dollar you put in an RRSP instead of a TFSA is projected to save you about <strong>$${(diffPerDollar).toFixed(2)}</strong> in lifetime tax per dollar contributed, or roughly <strong>$${Math.round(taxSavingsFromRRSP).toLocaleString()}</strong> on this year's contribution over ${yearsToRetire} years.`;
+  } else {
+    verdict = "✅ TFSA is better for you";
+    cls = "good";
+    explanation = `Your marginal tax rate today (${(currentMTR*100).toFixed(1)}%) is lower than your projected retirement rate (${(retireMTR*100).toFixed(1)}%). You'd pay less tax overall by using the TFSA. Projected advantage over ${yearsToRetire} years on this contribution: <strong>$${Math.round(-taxSavingsFromRRSP).toLocaleString()}</strong>.`;
+  }
+
+  document.getElementById('recommendation').innerHTML = `
+    <div class="result ${cls}">
+      <div class="verdict">${verdict}</div>
+      <div>${explanation}</div>
+    </div>
+  `;
+
+  // Projection
+  const rrspGrowth = effectiveContribRRSP * Math.pow(1+growth, yearsToRetire);
+  const tfsaGrowth = effectiveContribTFSA * Math.pow(1+growth, yearsToRetire);
+  const rrspAfterTax = rrspGrowth * (1 - retireMTR);
+  const tfsaAfterTax = tfsaGrowth;
+  const rrspRefundInvested = (effectiveContribRRSP * currentMTR) * Math.pow(1+growth, yearsToRetire) * (1 - retireMTR);
+
+  document.getElementById('projection').innerHTML = `
+    <div class="note" style="margin-bottom:14px;">If you contribute $${contribution.toLocaleString()} this year and let it grow at ${(growth*100).toFixed(1)}%/yr (${profileLabel.split('—')[0].trim()}) for ${yearsToRetire} years:</div>
+    <div class="metric"><span>RRSP balance at retirement (pre-tax)</span><span>$${Math.round(rrspGrowth).toLocaleString()}</span></div>
+    <div class="metric"><span>RRSP after tax on withdrawal</span><span>$${Math.round(rrspAfterTax).toLocaleString()}</span></div>
+    <div class="metric"><span>+ Tax refund reinvested in TFSA (after tax)</span><span>$${Math.round(rrspRefundInvested).toLocaleString()}</span></div>
+    <div class="metric"><span><strong>RRSP total after-tax value</strong></span><span><strong>$${Math.round(rrspAfterTax + rrspRefundInvested).toLocaleString()}</strong></span></div>
+    <div style="height:1px;background:#334155;margin:10px 0;"></div>
+    <div class="metric"><span>TFSA balance at retirement (tax-free)</span><span>$${Math.round(tfsaAfterTax).toLocaleString()}</span></div>
+    <div class="metric"><span><strong>TFSA total after-tax value</strong></span><span><strong>$${Math.round(tfsaAfterTax).toLocaleString()}</strong></span></div>
+    <div class="note" style="margin-top:14px;">
+      💡 <strong>Tip:</strong> Many Canadians do both. Max out any employer RRSP match first (free money), then decide RRSP vs TFSA for the rest based on the marginal-rate comparison above.
+    </div>
+  `;
+
+  window.scrollTo({ top: document.getElementById('output').offsetTop - 20, behavior: 'smooth' });
+}
+
+// Live updates
+['birthYear', 'residentYear', 'retireAge', 'tfsaContributions'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateEligibilityNote);
+});
+
+// Initial render
+updateCPP();
+updateEligibilityNote();
+</script>
+</body>
+</html>
